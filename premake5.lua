@@ -41,6 +41,6 @@ project "RayTracing"
         links { "glfw3", "OpengL32" }
     filter { "system:macosx" }
         libdirs {glfw_dir}
-        links { "glfw3", "GLAD", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework" }
+        links { "glfw3", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework" }
 
 
