@@ -1,4 +1,4 @@
-# Ray Tracing in One Weekend
+# Ray Tracing in OpenGL
 
 This project is intended for me to learn more about raytracing
 
