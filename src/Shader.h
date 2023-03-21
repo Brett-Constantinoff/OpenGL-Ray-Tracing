@@ -4,8 +4,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-
-#include "../libs/glad/include/glad/glad.h"
+#include <glad/glad.h>
 
 
 struct ShaderSource

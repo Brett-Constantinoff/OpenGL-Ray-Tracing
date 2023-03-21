@@ -5,8 +5,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-#include "../libs/glfw/glfw3.h"
-#include "../libs/glad/include/glad/glad.h"
+#include <glfw3.h>
+#include <cassert>
+#include <glad/glad.h>
 #include "Shader.h"
 
 int main()
