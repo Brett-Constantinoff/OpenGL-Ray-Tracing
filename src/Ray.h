@@ -16,7 +16,6 @@ struct Ray
 		return m_origin + t * m_direction;
 	}
 
-
 public:
 	Vec3<float> m_origin;
 	Vec3<float> m_direction;
