@@ -9,6 +9,27 @@
 #include <cassert>
 #include <glad/glad.h>
 #include "Shader.h"
+#include "Vec3.h"
+#include "Ray.h"
+
+Vec3<float> sphereHit(const Vec3<float>& center, float radius, const Ray& ray)
+{
+    Vec3<float> originToCenter{ ray.m_origin - center };
+    float a{ dot<float>(ray.m_direction, ray.m_direction) };
+    float b{ 2.0f * dot<float>(originToCenter, ray.m_direction) };
+    float c{ dot<float>(originToCenter, originToCenter) - radius * radius };
+    float discriminant{ b * b - 4.0f * a * c };
+
+    Vec3<float> dir{ unit<float>(ray.m_direction) };
+    float t{ 0.5f * (dir.y() + 1.0f) };
+
+    bool hit{ discriminant > 0 };
+
+    if (hit)
+        return Vec3<float>{1.0f, 0.0f, 0.0f};
+    else
+        return Vec3<float>{ (1.0f - t) * Vec3<float>{1.0f, 1.0f, 1.0f} + t * Vec3<float>{0.5f, 0.7f, 1.0f } };
+}
 
 int main()
 {
@@ -16,6 +37,7 @@ int main()
     assert(glfwInit() != GLFW_FALSE);
 
     // setup glfw window hints
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -24,8 +46,10 @@ int main()
     #endif
 
     // create glfw window
-    const int32_t c_height{720};
-    const int32_t c_width{720};
+    const float c_aspect{ 16.0f / 9.0f };
+    const int32_t c_width{ 1080 };
+    const int32_t c_height{ static_cast<int32_t>(c_width / c_aspect) };
+
     GLFWwindow* window {glfwCreateWindow(c_width, c_height, "Ray Tracing In One Weekend", nullptr, nullptr)};
     if (window == NULL)
         return -1;
@@ -72,27 +96,54 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
+
     // create texture data
-    int32_t pixels{c_width * c_height * 4};
+    int32_t pixels{c_width * c_height * 3};
     float* pixelData{new float[pixels]};
-    for (int32_t i{0}; i < pixels; i += 4)
+
+    // camera
+    float viewHeight{ 2.0f };
+    float viewWidth{ c_aspect * viewHeight };
+    float focalLen{ 1.0f };
+
+    Vec3<float> origin{};
+    Vec3<float> horizontal{ viewWidth, 0.0f, 0.0f };
+    Vec3<float> vertical{ 0.0f, viewHeight, 0.0f };
+    Vec3<float> lowerLeft{ origin - horizontal / 2.0f - vertical / 2.0f - Vec3<float>(0.0f, 0.0f, focalLen) };
+
+    for (int32_t y{ c_height - 1 }; y >= 0; y--)
     {
-        pixelData[i] = static_cast<float>(rand()) / RAND_MAX;
-        pixelData[i + 1] = static_cast<float>(rand()) / RAND_MAX;
-        pixelData[i + 2] = static_cast<float>(rand()) / RAND_MAX;
-        pixelData[i + 3] = 1.0f;
+        for (int32_t x{ 0 }; x < c_width; x++)
+        {
+            int32_t i{ (y * c_width + x) * 3 };
+
+            float u{ static_cast<float>(x) / (c_width - 1) };
+            float v{ static_cast<float>(y) / (c_height - 1) };
+
+            Ray ray{ origin, lowerLeft + u * horizontal + v * vertical - origin };
+
+            //check to see if we hit a sphere
+            Vec3<float> center{ 0.0f, 0.0f, -1.0f };
+            float radius{ 0.5f };
+
+            Vec3<float> color{ sphereHit(center, radius, ray) };
+
+            pixelData[i] = color.r();
+            pixelData[i + 1] = color.g();
+            pixelData[i + 2] = color.b();
+        }
     }
 
     // create texture to render to
     uint32_t texture{};
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 
-             c_width, c_height, 0, GL_RGBA, GL_FLOAT, pixelData);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
+             c_width, c_height, 0, GL_RGB, GL_FLOAT, pixelData);
 
     while (!glfwWindowShouldClose(window))
     {   
