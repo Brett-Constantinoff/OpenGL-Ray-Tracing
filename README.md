@@ -3,15 +3,22 @@
 This project is intended for me to learn more about raytracing
 
 # Build
+First clone using ```git clone --recursive git@github.com:Brett-Constantinoff/OpenGL-Ray-Tracing.git```
+
+Note: For running the project I recommend using release mode
 
 ## MacOS
 In the root run ```./premake/premake5 gmake```
 
 This will create a Makefile which you can then use the build
 the project using 
-```make```
+```make config=release```
 
-Then use ```./bin/Debug/RaytracingIOW``` to run the executable
+or 
+
+```make config=degub```
+
+Then use ```./Debug/Raytracing``` to run the executable
 
 ## Windows
 In the root run ```./premake/premake5 vs2022```
