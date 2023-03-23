@@ -9,6 +9,7 @@ RayTracer::RayTracer(std::shared_ptr<Window> window) :
 
 	initGeometry();
     initImage();
+    initGui();
 }
 
 RayTracer::~RayTracer()
@@ -18,6 +19,10 @@ RayTracer::~RayTracer()
     glDeleteBuffers(1, &m_vbo);
     glDeleteBuffers(1, &m_ibo);
     glDeleteTextures(1, &m_image);
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 }
 
 void RayTracer::render()
@@ -26,7 +31,7 @@ void RayTracer::render()
     {
         float initialTime{ static_cast<float>(glfwGetTime()) };
         renderImage();
-        std::cout << "Render Time (ms): " << (static_cast<float>(glfwGetTime()) - initialTime) * 1000.0f << "\r";
+        m_renderTime = (static_cast<float>(glfwGetTime()) - initialTime) * 1000.0f;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -40,8 +45,31 @@ void RayTracer::render()
         glBindVertexArray(m_vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
+        renderGui();
+
         m_window->pollEvents();
     }
+}
+
+void RayTracer::renderGui()
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // create window for controls
+    ImGui::Begin("Ray Tracing");
+
+    // time taken to render frame
+    ImGui::Text("Render Time (ms): %f", m_renderTime);
+
+    // sphere color
+    ImGui::ColorPicker3("Sphere Color", &m_sphereColor.x);
+
+    ImGui::End();
+
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 glm::vec3 RayTracer::colorPixxel(float u, float v)
@@ -84,8 +112,7 @@ glm::vec3 RayTracer::colorPixxel(float u, float v)
     // dont want negative
     float d{ glm::max(glm::dot(normal, -lightDir), 0.0f) };
 
-    glm::vec3 sphereColor = glm::vec3{ 1.0f, 0.0f, 1.0f } * d;    
-    return sphereColor;
+    return m_sphereColor * d;
 }
 
 void RayTracer::renderImage()
@@ -156,4 +183,15 @@ void RayTracer::initImage()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
         m_width, m_height, 0, GL_RGB, GL_FLOAT, nullptr);
 }
-	
+
+void RayTracer::initGui()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForOpenGL(m_window->m_window, true);
+    ImGui_ImplOpenGL3_Init("#version 150");
+}

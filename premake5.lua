@@ -19,6 +19,11 @@ project "RayTracing"
     language "C++"
     cppdialect "C++17"
     architecture "x64"
+    dependson
+    {
+        "imgui", 
+        "glm"
+    }
 
     targetdir "%{cfg.buildcfg}"
     objdir "%{cfg.buildcfg}/int/"
@@ -27,7 +32,9 @@ project "RayTracing"
     {
         "libs/glfw/include/",
         "src/glad/include/",
-        "libs/glm/"
+        "libs/glm/",
+        "libs/imgui/",
+        "libs/imgui/backends/"
     }
 
     files
@@ -39,10 +46,10 @@ project "RayTracing"
 
     filter { "system:windows" }
         libdirs {glfw_dir .. "/lib-vc2022"}
-        links { "glfw3", "OpengL32", "glm" }
+        links { "glfw3", "OpengL32", "glm", "imgui" }
     filter { "system:macosx" }
         libdirs {glfw_dir}
-        links { "glfw3", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework", "glm" }
+        links { "glfw3", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework", "glm", "imgui" }
 
 project "glm"
     kind "StaticLib"
@@ -60,3 +67,35 @@ project "glm"
     {
         "libs/glm"
     }
+
+project "imgui"
+	kind "StaticLib"
+	language "C"
+	architecture "x86_64"
+
+    targetdir "%{cfg.buildcfg}"
+    objdir "%{cfg.buildcfg}/int/"
+    
+    includedirs 
+    { 
+        "libs/imgui/",
+        "libs/imgui/backends/"
+    }
+
+	files 
+    { 
+        "libs/imgui/*.cpp", 
+        "libs/imgui/*.h" ,
+        "libs/imgui/backends/imgui_impl_opengl3.h",
+        "libs/imgui/backends/imgui_impl_opengl3.cpp",
+        "libs/imgui/backends/imgui_impl_glfw.h",
+        "libs/imgui/backends/imgui_impl_glfw.cpp",
+    }
+    
+	filter "configurations:Debug"
+		runtime "Debug"
+		symbols "on"
+
+	filter "configurations:Release"
+		runtime "Release"
+		optimize "on"

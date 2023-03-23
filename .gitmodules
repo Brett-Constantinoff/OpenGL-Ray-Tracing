@@ -1,3 +1,6 @@
 [submodule "libs/glm"]
 	path = libs/glm
 	url = git@github.com:Groovounet/glm.git
+[submodule "libs/imgui"]
+	path = libs/imgui
+	url = git@github.com:ocornut/imgui.git
