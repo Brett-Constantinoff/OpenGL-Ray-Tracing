@@ -2,11 +2,12 @@
 #define GL_SILENCE_DEPRECATION
 #endif
 
+#include <cstdlib>
+#include <ctime>
 #include <iostream>
 #include <vector>
-#include <glfw3.h>
 #include <cassert>
-#include <glad/glad.h>
+#include "Window.h"
 #include "Shader.h"
 #include "Vec3.h"
 #include "Ray.h"
@@ -18,32 +19,6 @@ struct Geo
     uint32_t m_ibo{};
     uint32_t m_vao{};
 };
-
-GLFWwindow* createWindow(const int32_t width, const int32_t height, const float aspect, const char* title)
-{
-     // init glfw
-    assert(glfwInit() != GLFW_FALSE);
-
-    // setup glfw window hints
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #ifdef __APPLE__
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    #endif
-
-    GLFWwindow* window {glfwCreateWindow(width, height, title, nullptr, nullptr)};
-    if (window == NULL)
-        return nullptr;
-    glfwMakeContextCurrent(window);
-
-    // init glad
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        return nullptr;
-
-    return window;
-}
 
 Geo setupGeometry()
 {
@@ -113,67 +88,25 @@ Vec3<float> rayColor(Ray& ray, const std::vector<Sphere>& hittables)
     return (1.0f - t) * Vec3<float>(1.0f, 1.0f, 1.0f) + t * Vec3<float>(0.5f, 0.7f, 1.0f);
 }
 
+void renderTexture(const Window& window, float* pixelData, const int32_t pixels)
+{
+    for (int32_t i{ 0 }; i < pixels; i++)
+    {
+        pixelData[i] = static_cast<float>(std::rand()) / RAND_MAX;
+    }
+}
+
 int main()
 {
-    // create scene window
-    const int32_t c_width{1080};
-    const float c_aspect{16.0f / 9.0f};
-    const int32_t c_height{static_cast<int32_t>(c_width / c_aspect)};
-    GLFWwindow* window{createWindow(c_width, c_height, c_aspect, "Ray Tracing")};
+    std::srand(std::time(nullptr));
+    
+    Window window{ 1080, 16.0f / 9.0f, "Raytracing" };
 
     // create shader
     Shader shader("shaders/shader.hlsl");
 
     // get our vao for geometry
     Geo geo{setupGeometry()};
-
-    // create texture data
-    int32_t pixels{c_width * c_height * 3};
-    float* pixelData{new float[pixels]};
-
-    // camera
-    float viewHeight{ 2.0f };
-    float viewWidth{ c_aspect * viewHeight };
-    float focalLen{ 1.0f };
-    Vec3<float> origin{};
-    Vec3<float> horizontal{ viewWidth, 0.0f, 0.0f };
-    Vec3<float> vertical{ 0.0f, viewHeight, 0.0f };
-    Vec3<float> lowerLeft{ origin - horizontal / 2.0f - vertical / 2.0f - Vec3<float>(0.0f, 0.0f, focalLen) };
-
-    // create hittable objects
-    std::vector<Sphere> spheres{};
-    Sphere sphere1({0.0f, 0.0f, -1.0f}, 0.5f);
-    Sphere sphere2({0.0f, -100.0f, -1.0f}, 100.0f);
-    
-    spheres.push_back(sphere1);
-    spheres.push_back(sphere2);
-
-    for (int32_t y{ c_height - 1 }; y >= 0; y--)
-    {
-        for (int32_t x{ 0 }; x < c_width; x++)
-        {
-            int32_t i{ (y * c_width + x) * 3 };
-            
-            // convert current pixel into u-v coordinates
-            float u{ static_cast<float>(x) / (c_width - 1) };
-            float v{ static_cast<float>(y) / (c_height - 1) };
-
-            // create ray for current u-v coord
-            Ray ray{ origin, lowerLeft + u * horizontal + v * vertical - origin };
-
-            //check to see if we hit a sphere
-            Vec3<float> center{ 0.0f, 0.0f, -1.0f };
-            float radius{ 0.5f };
-
-            // get ray color
-            Vec3<float> color{ rayColor(ray, spheres) };
-
-            // color the current pixel with ray color
-            pixelData[i] = color.r();
-            pixelData[i + 1] = color.g();
-            pixelData[i + 2] = color.b();
-        }
-    }
 
     // create texture to render to
     uint32_t texture{};
@@ -183,11 +116,19 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 
-             c_width, c_height, 0, GL_RGB, GL_FLOAT, pixelData);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+             window.m_width, window.m_height, 0, GL_RGB, GL_FLOAT, nullptr);
 
-    while (!glfwWindowShouldClose(window))
+    int32_t pixels{ window.m_width * window.m_height * 3 };
+    float* pixelData{ new float[pixels] };
+
+    while (!glfwWindowShouldClose(window.m_window))
     {   
+        float initialTime{ static_cast<float>(glfwGetTime()) };
+        renderTexture(window, pixelData, pixels);
+        float endTime{ static_cast<float>(glfwGetTime()) };
+        std::cout << "Render Time (ms): " << (endTime - initialTime) * 1000 << "\r";
+    
         glClear(GL_COLOR_BUFFER_BIT);
 
         shader.use();
@@ -195,15 +136,15 @@ int main()
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, texture);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, window.m_width, window.m_height, GL_RGB, GL_FLOAT, pixelData);
+
         glBindVertexArray(geo.m_vao);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-        glfwSwapBuffers(window);
+        glfwSwapBuffers(window.m_window);
         glfwPollEvents();
     }
 
-    glfwTerminate();
-    glfwDestroyWindow(window);
     delete[] pixelData;
     glDeleteVertexArrays(1, &geo.m_vao);
     glDeleteBuffers(1, &geo.m_vbo);
