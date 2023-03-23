@@ -48,12 +48,11 @@ glm::vec3 RayTracer::colorPixxel(float u, float v)
 {
     m_rayOrg.x = 0.0f;
     m_rayOrg.y = 0.0f;
-    m_rayOrg.z = 2.0f;
+    m_rayOrg.z = 1.0f;
 
     m_rayDir.x = u * m_aspect;
     m_rayDir.y = v;
     m_rayDir.z = -1.0f;
-
 
     float r{ 0.5f };
 
@@ -63,16 +62,30 @@ glm::vec3 RayTracer::colorPixxel(float u, float v)
 
     float discr{ b * b - 4 * a * c };
 
-    glm::vec3 color{};
-    if (discr >= 0)
-    {
-       color = glm::vec3{1.0f, 0.0f, 1.0f};
-    }
-    else
-    {
-        color = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    }
-    return color;
+    // no solutions
+    if (discr < 0.0f)
+        return glm::vec3{ 0.0f, 0.0f, 0.0f };
+
+    // positive root
+    float t0{ (-b + glm::sqrt(discr)) / (2.0f * a) };
+
+    // negative root (closest intersection)
+    float t1{ (-b - glm::sqrt(discr)) / (2.0f * a) };
+
+    glm::vec3 hitPos{ m_rayOrg + m_rayDir * t1 };
+
+    // create normal for origin 0 0 0
+    glm::vec3 normal{ glm::normalize(hitPos) };
+
+    // create light dir
+    glm::vec3 lightDir{ glm::normalize(glm::vec3{-1.0f, -1.0f, -1.0f}) };
+
+    // cos(angle)
+    // dont want negative
+    float d{ glm::max(glm::dot(normal, -lightDir), 0.0f) };
+
+    glm::vec3 sphereColor = glm::vec3{ 1.0f, 0.0f, 1.0f } * d;    
+    return sphereColor;
 }
 
 void RayTracer::renderImage()
