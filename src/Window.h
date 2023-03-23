@@ -36,6 +36,17 @@ struct Window
         glfwDestroyWindow(m_window);
     }
 
+    bool isOpen()
+    {
+        return !glfwWindowShouldClose(m_window);
+    }
+
+    void pollEvents()
+    {
+        glfwSwapBuffers(m_window);
+        glfwPollEvents();
+    }
+
 
     GLFWwindow* m_window;
 	int32_t m_height;

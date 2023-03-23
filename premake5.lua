@@ -26,7 +26,8 @@ project "RayTracing"
     includedirs
     {
         "libs/glfw/include/",
-        "src/glad/include/"
+        "src/glad/include/",
+        "libs/glm/"
     }
 
     files
@@ -38,9 +39,24 @@ project "RayTracing"
 
     filter { "system:windows" }
         libdirs {glfw_dir .. "/lib-vc2022"}
-        links { "glfw3", "OpengL32" }
+        links { "glfw3", "OpengL32", "glm" }
     filter { "system:macosx" }
         libdirs {glfw_dir}
-        links { "glfw3", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework" }
+        links { "glfw3", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework", "glm" }
 
+project "glm"
+    kind "StaticLib"
+    language "C++"
+    targetdir "%{cfg.buildcfg}"
+    objdir "%{cfg.buildcfg}/int/"
 
+    files
+    {
+        "libs/glm/glm/*.hpp",
+        "libs/glm/glm/**.cpp"
+    }
+
+    includedirs
+    {
+        "libs/glm"
+    }
