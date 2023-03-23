@@ -20,8 +20,8 @@ project "RayTracing"
     cppdialect "C++17"
     architecture "x64"
 
-    targetdir "bin/RayTracing/%{cfg.buildcfg}"
-    objdir "bin-int/RayTracing/%{cfg.buildcfg}"
+    targetdir "%{cfg.buildcfg}"
+    objdir "%{cfg.buildcfg}/int/"
 
     includedirs
     {

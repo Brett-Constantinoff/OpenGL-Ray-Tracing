@@ -85,10 +85,10 @@ public:
 
     T length() const
     {
-        return sqrt(length_squared());
+        return sqrt(lengthSquared());
     }
 
-    T length_squared() const
+    T lengthSquared() const
     {
         return m_vals[0] * m_vals[0] + m_vals[1] * m_vals[1] + m_vals[2] * m_vals[2];
     }
