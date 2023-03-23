@@ -47,9 +47,7 @@ project "RayTracing"
     filter { "system:windows" }
         libdirs {glfw_dir .. "/lib-vc2022"}
         links { "glfw3", "OpengL32", "glm", "imgui" }
-    filter { "system:macosx" }
-        libdirs {glfw_dir}
-        links { "glfw3", "Cocoa.framework", "IOKit.framework", "CoreVideo.framework", "OpenGL.framework", "glm", "imgui" }
+
 
 project "glm"
     kind "StaticLib"
